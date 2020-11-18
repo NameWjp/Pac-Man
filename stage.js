@@ -21,7 +21,6 @@ class Stage {
   // 重置
   reset() {
     Object.assign(this, this.settings, this.params);
-    this.status = 1;
     this.resetItems();
     this.resetMaps();
   }

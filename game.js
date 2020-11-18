@@ -75,6 +75,7 @@ class Game {
     this.index = index;
     // 初始化新布景状态
     this.stages[index].reset();
+    this.stages[index].status = 1;
 
     return this.stages[index];
   }
