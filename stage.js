@@ -28,13 +28,15 @@ class Stage {
   // 重置物体位置
   resetItems() {
     this.items.forEach((item) => {
-      Object.assign(item, item.settings, item.params);
+      item.reset();
     })
   }
 
   // 重置地图
   resetMaps() {
-
+    this.maps.forEach((map) => {
+      map.reset();
+    })
   }
 
   // 绑定事件
@@ -57,8 +59,15 @@ class Stage {
 
   // 添加对象
   createItem(options = {}) {
-    const item = new Item(options, this.game, this);
+    const item = new StageItem(options, this.game, this);
     this.items.push(item);
     return item;
+  }
+
+  // 添加地图
+  createMap(options = {}) {
+    const map = new StageMap(options, this.game, this);
+    this.maps.push(map);
+    return map;
   }
 }

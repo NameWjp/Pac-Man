@@ -41,7 +41,27 @@ class Game {
       context.fillRect(0, 0, width, height);
       f++;
 
-      if (stage.update() !== false) {   // update返回false,则不绘制
+      if (stage.update() !== false) {   // update 返回 false,则不绘制
+        // stage中的map处理
+        stage.maps.forEach((map) => {
+          // 更新 times 次数
+          if (!(f % map.frames)) {
+            map.times = f / map.frames;
+          }
+          if (map.cache) {
+            if (!map.cacheData) {
+              context.save();
+              map.draw(context);
+              map.cacheData = context.getImageData(0 ,0, this.width, this.height);
+              context.restore();
+            } else {
+              context.putImageData(map.cacheData, 0, 0);
+            }
+          } else {
+            map.update();
+            map.draw(context);
+          }
+        });
         // stage中的item处理
         stage.items.forEach((item) => {
           // 更新 times 次数
@@ -49,7 +69,7 @@ class Game {
             item.times = f / item.frames;
           }
           item.draw(context);
-        })
+        });
       }
 
       this.handler = requestAnimationFrame(fn);

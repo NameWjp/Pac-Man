@@ -1,10 +1,11 @@
 // 单元类
-let _itemId = 0;
-class Item {
+class StageItem {
+  static _id = 0;
+
   constructor(params = {}, game, stage) {
     this.game = game;       // 与所属游戏绑定
     this.stage = stage;     // 与所属布景绑定
-    this.id = _itemId++;    // 标识符
+    this.id = StageItem._id++;    // 标识符
     this.params = params;
 
     this.settings = {
@@ -31,6 +32,11 @@ class Item {
       draw: function(){}      // 绘制
     }
 
+    Object.assign(this, this.settings, this.params);
+  }
+
+  // 重置单元类
+  reset() {
     Object.assign(this, this.settings, this.params);
   }
 }
