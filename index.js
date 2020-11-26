@@ -5,57 +5,57 @@ const _SCORE = 0; // 玩家得分
 const game = new Game('canvas');
 
 // 启动页面
-// (function() {
-//   const stage = game.createStage();
-//   // logo
-//   stage.createItem({
-//     x: game.width / 2,
-//     y: game.height * 0.45,
-//     width: 100,
-//     height: 100,
-//     frames: 3,
-//     draw(context) {
-//       // 根据内部计算器 times 计算出 t(0 -> 5 的整数) 重新绘制
-//       const t = Math.abs(5 - this.times % 10);
+(function() {
+  const stage = game.createStage();
+  // logo
+  stage.createItem({
+    x: game.width / 2,
+    y: game.height * 0.45,
+    width: 100,
+    height: 100,
+    frames: 3,
+    draw(context) {
+      // 根据内部计算器 times 计算出 t(0 -> 5 的整数) 重新绘制
+      const t = Math.abs(5 - this.times % 10);
 
-//       context.fillStyle = '#FFE600';
-//       context.beginPath();
-//       context.arc(this.x, this.y, this.width / 2, t * 0.04 * Math.PI, (2 - t * 0.04) * Math.PI, false);
-//       context.lineTo(this.x, this.y);
-//       context.closePath();
-//       context.fill();
+      context.fillStyle = '#FFE600';
+      context.beginPath();
+      context.arc(this.x, this.y, this.width / 2, t * 0.04 * Math.PI, (2 - t * 0.04) * Math.PI, false);
+      context.lineTo(this.x, this.y);
+      context.closePath();
+      context.fill();
       
-//       context.fillStyle = "#000";
-//       context.beginPath();
-//       context.arc(this.x + 5, this.y - 27, 7, 0, 2 * Math.PI, false);
-//       context.closePath();
-//       context.fill();
-//     }
-//   });
+      context.fillStyle = '#000';
+      context.beginPath();
+      context.arc(this.x + 5, this.y - 27, 7, 0, 2 * Math.PI, false);
+      context.closePath();
+      context.fill();
+    }
+  });
 
-//   // 游戏名
-//   stage.createItem({
-//     x: game.width / 2,
-//     y: game.height * 0.6,
-//     draw(context) {
-//       context.font = 'bold 42px Helvetica';
-//       context.textAlign = 'center';
-//       context.textBaseline = 'middle';
-//       context.fillStyle = '#FFF';
-//       context.fillText('Pac-Man', this.x, this.y);
-//     }
-//   });
+  // 游戏名
+  stage.createItem({
+    x: game.width / 2,
+    y: game.height * 0.6,
+    draw(context) {
+      context.font = 'bold 42px Helvetica';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#FFF';
+      context.fillText('Pac-Man', this.x, this.y);
+    }
+  });
   
-//   // 事件绑定
-//   stage.bind('keydown', (e) => {
-//     switch(e.keyCode) {
-//       case 13:
-//       case 32:
-//         game.nextStage();
-//         break;
-//     }
-//   });
-// })();
+  // 事件绑定
+  stage.bind('keydown', (e) => {
+    switch(e.keyCode) {
+      case 13:
+      case 32:
+        game.nextStage();
+        break;
+    }
+  });
+})();
 
 // 游戏主程序
 (function() {
@@ -91,7 +91,7 @@ const game = new Game('canvas');
                * 其他圆弧的推导相同
                */
               const code = [0, 0, 0, 0];
-              // 右侧点 ()
+              // 右侧点
               if (this.get(x + 1, y) && !(this.get(x + 1, y - 1) && this.get(x + 1, y + 1) && this.get(x, y - 1) && this.get(x, y + 1))) {
                 code[0] = 1;
               }
@@ -165,7 +165,106 @@ const game = new Game('canvas');
         }
       }
     });
-  })
+
+    // 绘制物品
+    beans = stage.createMap({
+      x: 60,
+      y: 10,
+      data: config['map'],
+      frames: 8,
+      draw(context) {
+        for (let y = 0; y < this.yLength; y++) {
+          for (let x = 0; x < this.xLength; x++) {
+            if (!this.get(x, y)) {
+              const pos = this.coord2position(x, y);
+              const side = 2;
+              context.fillStyle = '#F5F5DC';
+              // 能量豆位置
+              if (config['goods'][`${x},${y}`]) {
+                context.beginPath();
+                context.arc(pos.x, pos.y, 3 + this.times % 2, 0, 2 * Math.PI, false);
+                context.closePath();
+                context.fill();
+              } else {
+                context.fillRect(pos.x - side, pos.y - side, 2 * side, 2 * side);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 关卡得分
+    stage.createItem({
+      x: 690,
+      y: 80,
+      draw(context) {
+        context.font = 'bold 26px Helvetica';
+        context.textAlign = 'left';
+        context.textBaseline = 'bottom';
+        context.fillStyle = '#C33';
+        context.fillText('SCORE', this.x, this.y);
+        context.font = '26px Helvetica';
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.fillStyle = '#FFF';
+        context.fillText(_SCORE, this.x + 12, this.y);
+        context.font = 'bold 26px Helvetica';
+        context.textAlign = 'left';
+        context.textBaseline = 'bottom';
+        context.fillStyle = '#C33';
+        context.fillText('LEVEL', this.x, this.y + 72);
+        context.font = 'bold 26px Helvetica';
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.fillStyle = '#FFF';
+        context.fillText(this.game.index + 1, this.x + 12, this.y + 72);
+      }
+    });
+
+    // 暂停状态展示
+    stage.createItem({
+      x: 690,
+      y: 285,
+      frames: 25,
+      draw(context) {
+        if (stage.status === 2 && this.times % 2) {
+          context.font = '24px Helvetica';
+          context.textAlign = 'left';
+          context.textBaseline = 'center';
+          context.fillStyle = '#FFF';
+          context.fillText('PAUSE', this.x, this.y);
+        }
+      }
+    });
+
+    // 生命值
+    stage.createItem({
+      x: 705,
+      y: 510,
+      width: 30,
+      height: 30,
+      draw(context) {
+        const leftLife = _LIFE - 1;
+        const max = Math.min(leftLife, 5);
+        for (let i = 0; i < max; i++) {
+          const x = this.x + 40 * i;
+          const y = this.y;
+          context.fillStyle = '#FFE600';
+          context.beginPath();
+          context.arc(x, y, this.width / 2, 0.15 * Math.PI, -0.15 * Math.PI, false);
+          context.lineTo(x, y);
+          context.closePath();
+          context.fill();
+        }
+        context.font = '26px Helvetica';
+        context.textAlign = 'left';
+        context.textBaseline = 'center';
+        context.fillStyle = '#FFF';
+        context.fillText(`X ${leftLife}`, this.x - 15, this.y + 30);
+      }
+    });
+  });
 })()
 
 game.init();
