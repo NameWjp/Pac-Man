@@ -70,4 +70,11 @@ class Stage {
     this.maps.push(map);
     return map;
   }
+  
+  // 获取对象列表
+  getItemsByType(type) {
+    return this.items.filter((item) => {
+      return item.type === type;
+    });
+  }
 }

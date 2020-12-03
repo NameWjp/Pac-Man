@@ -68,6 +68,10 @@ class Game {
           if (!(f % item.frames)) {
             item.times = f / item.frames;
           }
+          // 对象和布景都不处于暂停状态
+          if (stage.status === 1 && item.status !== 2) {
+            item.update();
+          }
           item.draw(context);
         });
       }

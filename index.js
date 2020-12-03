@@ -1,6 +1,9 @@
-const _NPC = ['#F00','#F93','#0CF','#F9C']; //NPC颜色
+const _COLOR = ['#F00','#F93','#0CF','#F9C']; //NPC颜色
 const _LIFE = 5; // 玩家生命值
 const _SCORE = 0; // 玩家得分
+// sin cos 值，用于根据方向计算出幽灵眼睛的位置
+const _SIN = [0, 1, 0, -1];
+const _COS = [1, 0, -1, 0];
 
 const game = new Game('canvas');
 
@@ -60,7 +63,7 @@ const game = new Game('canvas');
 // 游戏主程序
 (function() {
   _GAMEData.forEach((config, index) => {
-    let stage, map, beans, items, player, times;
+    let stage, map, beans, npcs, player, times;
 
     stage = game.createStage({
       update() {
@@ -156,8 +159,6 @@ const game = new Game('canvas');
                     context.stroke();
                     context.closePath();
                     break;
-                  default:
-                    break;
                 }
               }
             }
@@ -218,7 +219,7 @@ const game = new Game('canvas');
         context.textAlign = 'left';
         context.textBaseline = 'top';
         context.fillStyle = '#FFF';
-        context.fillText(this.game.index + 1, this.x + 12, this.y + 72);
+        context.fillText(this.game.index, this.x + 12, this.y + 72);
       }
     });
 
@@ -264,7 +265,130 @@ const game = new Game('canvas');
         context.fillText(`X ${leftLife}`, this.x - 15, this.y + 30);
       }
     });
+
+    // 幽灵
+    for (let i = 0; i < 4; i++) {
+      stage.createItem({
+        width: 30,
+        height: 30,
+        direction: 3,
+        color: _COLOR[i],
+        location: map,
+        coord: { x: 12 + i, y: 14 },
+        vector: { x: 12 + i, y: 14 },
+        type: 2,
+        frames: 10,
+        speed: 1,
+        timeout: Math.floor(Math.random() * 120),
+        update() {
+          // todo update
+          this.x = 350;
+          this.y = 300;
+        },
+        draw(context) {
+          const isSick = false;
+          if (this.status !== 4) {
+            context.fillStyle = isSick ? '#BABABA' : this.color;
+            context.beginPath();
+            // 画幽灵身体
+            context.arc(this.x, this.y, this.width * 0.5, 0, Math.PI, true);
+            // 画幽灵脚
+            switch(this.times % 2) {
+              case 0: 
+                context.lineTo(this.x - this.width * 0.5, this.y + this.height * 0.4);
+                // quadraticCurveTo 用于画曲线，前两个坐标是控制点坐标，控制曲线弯曲程度，后两个点是终点坐标(默认起始点是当前路径最新的点)
+                context.quadraticCurveTo(this.x - this.width * 0.4, this.y + this.height * 0.5, this.x - this.width * 0.2, this.y + this.height * 0.3);
+                context.quadraticCurveTo(this.x, this.y + this.height * 0.5, this.x + this.width * 0.2, this.y + this.height * 0.3);
+                context.quadraticCurveTo(this.x + this.width * 0.4, this.y + this.height * 0.5, this.x + this.width * 0.5, this.y + this.height * 0.4);
+                break;
+              case 1: 
+                context.lineTo(this.x - this.width * 0.5, this.y + this.height * 0.3);
+                context.quadraticCurveTo(this.x - this.width * 0.25, this.y + this.height * 0.5, this.x, this.y + this.height * 0.3);
+                context.quadraticCurveTo(this.x + this.width * 0.25, this.y + this.height * 0.5, this.x + this.width * 0.5, this.y + this.height * 0.3);
+                break;
+            }
+            context.closePath();
+            context.fill();
+          }
+          context.fillStyle = '#FFF';
+          if (isSick) {
+            context.arc(this.x - this.width * 0.15, this.y - this.height * 0.21, this.width * 0.08, 0, 2 * Math.PI, false);
+            context.arc(this.x + this.width * 0.15, this.y - this.height * 0.21, this.width * 0.08, 0, 2 * Math.PI, false);
+          } else {
+            // 画幽灵的眼睛
+            context.beginPath();
+            context.arc(this.x - this.width * 0.15, this.y - this.height * 0.21, this.width * 0.12, 0, 2 * Math.PI, false);
+            context.arc(this.x + this.width * 0.15, this.y - this.height * 0.21, this.width * 0.12, 0, 2 * Math.PI, false);
+            context.closePath();
+            context.fill();
+            context.fillStyle = '#000';
+            context.beginPath();
+            context.arc(this.x - this.width * (0.15 - 0.04 * _COS[this.direction]), this.y - this.height * (0.21 - 0.04 * _SIN[this.direction]), this.width * 0.07, 0, 2 * Math.PI, false);
+            context.arc(this.x + this.width * (0.15 + 0.04 * _COS[this.direction]), this.y - this.height * (0.21 - 0.04 * _SIN[this.direction]), this.width * 0.07, 0, 2 * Math.PI, false);
+            context.closePath();
+            context.fill();
+          }
+        }
+      })
+    }
+
+    // 画完 npc 后保留引用，用于后续逻辑
+    npcs = stage.getItemsByType(2);
+    
+    // 主角
+    player = stage.createItem({
+      width: 30,
+      height: 30,
+      type: 1,
+      location: map,
+      coord: { x: 13.5, y: 23 },
+      direction: 2,
+      speed: 2,
+      frames: 10,
+      update() {
+        // to do update
+        this.x = 200;
+        this.y = 300;
+      },
+      draw(context) {
+        context.fillStyle = "#FFE600";
+        context.beginPath();
+        // 玩家正常状态
+        if (stage.status !== 3) {
+          if (this.times % 2) {
+            context.arc(this.x, this.y, this.width / 2, (0.5 * this.direction + 0.20) * Math.PI, (0.5 * this.direction - 0.20) * Math.PI, false);
+          } else {
+            context.arc(this.x, this.y, this.width / 2, (0.5 * this.direction + 0.01) * Math.PI, (0.5 * this.direction - 0.01) * Math.PI, false);
+          }
+        }
+        context.lineTo(this.x, this.y);
+        context.closePath();
+        context.fill();
+      }
+    });
+
+    // 事件绑定
+    stage.bind('keydown', (e) => {
+      switch(e.keyCode) {
+        case 13: // 回车
+        case 32: // 空格
+          this.status = this.status === 2 ? 1 : 2;
+          break;
+        case 39: // 右
+          player.control = { direction: 0 };
+          break;
+        case 40: // 下
+          player.control = { direction: 1 };
+          break;
+        case 37: // 左
+          player.control = { direction: 2 };
+          break;
+        case 38: 
+          player.control = { direction: 3 };
+          break;  
+      }
+    })
   });
-})()
+})();
 
 game.init();
