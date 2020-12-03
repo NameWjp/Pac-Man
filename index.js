@@ -167,7 +167,7 @@ const game = new Game('canvas');
       }
     });
 
-    // 绘制物品
+    // 绘制豆子和能量豆
     beans = stage.createMap({
       x: 60,
       y: 10,
