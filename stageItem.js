@@ -33,10 +33,18 @@ class StageItem {
     }
 
     Object.assign(this, this.settings, this.params);
+
+    // 如果有 location 属性，则说明是动态属性（例如 主角，幽灵），此时映射主角的画布坐标
+    if (this.location) {
+      Object.assign(this, this.location.coord2position(this.coord.x, this.coord.y));
+    }
   }
 
   // 重置单元类
   reset() {
     Object.assign(this, this.settings, this.params);
+    if (this.location) {
+      Object.assign(this, this.location.coord2position(this.coord.x, this.coord.y));
+    }
   }
 }

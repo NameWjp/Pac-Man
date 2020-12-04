@@ -1,7 +1,7 @@
 const _COLOR = ['#F00','#F93','#0CF','#F9C']; //NPC颜色
 const _LIFE = 5; // 玩家生命值
 const _SCORE = 0; // 玩家得分
-// sin cos 值，用于根据方向计算出幽灵眼睛的位置
+// sin cos 分别用计算于 y 轴和 x 轴的偏移值（分别对应 右 下 左 上 四个方向）
 const _SIN = [0, 1, 0, -1];
 const _COS = [1, 0, -1, 0];
 
@@ -282,8 +282,6 @@ const game = new Game('canvas');
         timeout: Math.floor(Math.random() * 120),
         update() {
           // todo update
-          this.x = 350;
-          this.y = 300;
         },
         draw(context) {
           const isSick = false;
@@ -335,7 +333,12 @@ const game = new Game('canvas');
     // 画完 npc 后保留引用，用于后续逻辑
     npcs = stage.getItemsByType(2);
     
-    // 主角
+    /**
+     * 主角
+     * 运行逻辑：
+     * 初始化的过程中，通过设置的 coord 去计算出画布坐标，每次更新的时候通过画布坐标重新计算出 coord (元整 x y 标记是否有偏移量)，
+     * 有偏移量的时候继续移动并处理吃豆情况，正好处于中心点时判断下一个方向，如果合法则重新赋值一点偏移量，使下次循环继续移动
+     */
     player = stage.createItem({
       width: 30,
       height: 30,
@@ -346,9 +349,28 @@ const game = new Game('canvas');
       speed: 2,
       frames: 10,
       update() {
-        // to do update
-        this.x = 200;
-        this.y = 300;
+        const coord = this.coord;
+        if (!coord.offset) {    // 没有偏移量
+          // 处理玩家的合法方向键
+          if (typeof this.control.direction !== 'undefined') {
+            if (!map.get(coord.x + _COS[this.control.direction], coord.y + _SIN[this.control.direction])) {
+              this.direction = this.control.direction;
+            }
+          }
+          this.control = {};
+
+          const value = map.get(coord.x + _COS[this.direction], coord.y + _SIN[this.direction]);
+          if (value === 0) {
+            this.x += this.speed * _COS[this.direction];
+            this.y += this.speed * _SIN[this.direction];
+          } else if (value < 0) {
+            this.x -= map.size * (map.xLength - 1) * _COS[this.direction];
+            this.y -= map.size * (map.yLength - 1) * _SIN[this.direction];
+          }
+        } else {    // 有偏移量
+          this.x += this.speed * _COS[this.direction];
+          this.y += this.speed * _SIN[this.direction];
+        }
       },
       draw(context) {
         context.fillStyle = "#FFE600";

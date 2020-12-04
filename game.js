@@ -48,6 +48,7 @@ class Game {
           if (!(f % map.frames)) {
             map.times = f / map.frames;
           }
+          // 缓存静态数据，例如地图
           if (map.cache) {
             if (!map.cacheData) {
               context.save();
@@ -70,6 +71,10 @@ class Game {
           }
           // 对象和布景都不处于暂停状态
           if (stage.status === 1 && item.status !== 2) {
+            // 如果与地图关联，每次将自己的左边根据画布坐标更新
+            if (item.location) {
+              item.coord = item.location.position2coord(item.x, item.y);
+            }
             item.update();
           }
           item.draw(context);
