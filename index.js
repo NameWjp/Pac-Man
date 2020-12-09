@@ -1,5 +1,5 @@
 const _COLOR = ['#F00','#F93','#0CF','#F9C']; //NPC颜色
-let _LIFE = 5; // 玩家生命值
+let _LIFE = 5; // 玩家生命值（减到 0 时结束游戏，通关后每剩余 1 条命加50 分）
 let _SCORE = 0; // 玩家得分
 // sin cos 分别用计算于 y 轴和 x 轴的偏移值（分别对应 右 下 左 上 四个方向）
 const _SIN = [0, 1, 0, -1];
@@ -50,7 +50,7 @@ const game = new Game('canvas');
   });
   
   // 事件绑定
-  stage.bind('keydown', (e) => {
+  stage.bind('keydown', function(e) {
     switch(e.keyCode) {
       case 13:
       case 32:
@@ -437,6 +437,46 @@ const game = new Game('canvas');
           break;  
       }
     })
+  });
+})();
+
+// 结束动画
+(function() {
+  const stage = game.createStage();
+  // 游戏结束
+  stage.createItem({
+    x: game.width / 2,
+    y: game.height * 0.35,
+    draw(context) {
+      context.fillStyle = '#FFF';
+      context.font = 'bold 48px Helvetica';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(_LIFE ? 'YOU WIN!' : 'GAME OVER', this.x, this.y);
+    }
+  });
+  // 记分
+  stage.createItem({
+    x: game.width / 2,
+    y: game.height * 0.5,
+    draw(context) {
+      context.fillStyle = '#FFF';
+      context.font = '20px Helvetica';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText('FINAL SCORE: ' + (_SCORE + 50 * Math.max(_LIFE - 1, 0)), this.x, this.y)
+    }
+  });
+  // 事件绑定
+  stage.bind('keydown', function(e) {
+    switch(e.keyCode) {
+      case 13: // 回车
+      case 32: // 空格
+      _SCORE = 0;
+      _LIFE = 5;
+      game.setStage(1);
+      break;
+    }
   });
 })();
 
