@@ -63,11 +63,16 @@ const game = new Game('canvas');
 // 游戏主程序
 (function() {
   _GAMEData.forEach((config, index) => {
-    let stage, map, beans, npcs, player, times;
+    let stage, map, beans, npcs, player;
 
     stage = game.createStage({
       update() {
-        // todo 更新布景
+        if (this.status === 1) {
+          // 吃完豆子进入下一关
+          if (JSON.stringify(beans.data).indexOf(0) === -1) {
+            game.nextStage();
+          }
+        }
       }
     });
 
@@ -357,7 +362,7 @@ const game = new Game('canvas');
       update() {
         const coord = this.coord;
         if (!coord.offset) {    // 没有偏移量
-          // 处理玩家的合法方向键
+          // 处理玩家的合法方向键（这里注意，在下一个点位到达前，如果还不是合法按键，则会被重置掉）
           if (typeof this.control.direction !== 'undefined') {
             if (!map.get(coord.x + _COS[this.control.direction], coord.y + _SIN[this.control.direction])) {
               this.direction = this.control.direction;
@@ -411,8 +416,8 @@ const game = new Game('canvas');
       }
     });
 
-    // 事件绑定
-    stage.bind('keydown', (e) => {
+    // 事件绑定（注意这里不要使用箭头函数）
+    stage.bind('keydown', function(e) {
       switch(e.keyCode) {
         case 13: // 回车
         case 32: // 空格

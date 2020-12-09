@@ -71,7 +71,7 @@ class Game {
           }
           // 对象和布景都不处于暂停状态
           if (stage.status === 1 && item.status !== 2) {
-            // 如果与地图关联，每次将自己的左边根据画布坐标更新
+            // 如果与地图关联，每次将自己的坐标根据画布坐标更新
             if (item.location) {
               item.coord = item.location.position2coord(item.x, item.y);
             }
@@ -89,6 +89,11 @@ class Game {
     }
 
     this.handler = requestAnimationFrame(fn);
+  }
+
+  // 动画结束
+  stop() {
+    this.handler && cancelAnimationFrame(this.handler);
   }
 
   // 下个布景
