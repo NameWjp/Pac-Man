@@ -40,6 +40,13 @@ class StageMap {
     return -1;
   }
 
+  // 设置地图上某点的值
+  set(x, y, value) {
+    if (this.data[y]) {
+      this.data[y][x] = value;
+    }
+  }
+
   // 重置地图类
   reset() {
     Object.assign(this, this.settings, this.params);

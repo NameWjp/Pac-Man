@@ -1,6 +1,6 @@
 const _COLOR = ['#F00','#F93','#0CF','#F9C']; //NPC颜色
-const _LIFE = 5; // 玩家生命值
-const _SCORE = 0; // 玩家得分
+let _LIFE = 5; // 玩家生命值
+let _SCORE = 0; // 玩家得分
 // sin cos 分别用计算于 y 轴和 x 轴的偏移值（分别对应 右 下 左 上 四个方向）
 const _SIN = [0, 1, 0, -1];
 const _COS = [1, 0, -1, 0];
@@ -281,10 +281,16 @@ const game = new Game('canvas');
         speed: 1,
         timeout: Math.floor(Math.random() * 120),
         update() {
-          // todo update
+          if (this.status === 3 && !this.timeout) {
+            this.status = 1;
+          }
         },
         draw(context) {
-          const isSick = false;
+          let isSick = false;
+          if (this.status === 3) {
+            // 倒计时帧数大于 80 生病状态，小于 80 时正常和生病来回切换
+            isSick = this.timeout > 80 || this.times % 2 ? true : false;
+          }
           if (this.status !== 4) {
             context.fillStyle = isSick ? '#BABABA' : this.color;
             context.beginPath();
@@ -359,15 +365,31 @@ const game = new Game('canvas');
           }
           this.control = {};
 
+          // 根据当前的合法按键算出新的坐标
           const value = map.get(coord.x + _COS[this.direction], coord.y + _SIN[this.direction]);
-          if (value === 0) {
+          if (value === 0) { // 正常路径
             this.x += this.speed * _COS[this.direction];
             this.y += this.speed * _SIN[this.direction];
-          } else if (value < 0) {
+          } else if (value < 0) { // 左右横穿
             this.x -= map.size * (map.xLength - 1) * _COS[this.direction];
             this.y -= map.size * (map.yLength - 1) * _SIN[this.direction];
           }
         } else {    // 有偏移量
+          // 吃豆判断
+          if (!beans.get(this.coord.x, this.coord.y)) {
+            _SCORE++;
+            // 这里需要注意的是：绘制豆子的 data 和绘制地图的 data 都是深拷贝，设置 beans 的 data 不会影响地图的 data
+            beans.set(this.coord.x, this.coord.y, 1);
+            // 吃到能量豆，设置幽灵状态，倒计时结束解除
+            if (config['goods'][`${this.coord.x},${this.coord.y}`]) {
+              npcs.forEach((npc) => {
+                if (npc.status === 1 || npc.status === 3) {
+                  npc.timeout = 450;
+                  npc.status = 3;
+                }
+              })
+            }
+          }
           this.x += this.speed * _COS[this.direction];
           this.y += this.speed * _SIN[this.direction];
         }

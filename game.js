@@ -75,6 +75,10 @@ class Game {
             if (item.location) {
               item.coord = item.location.position2coord(item.x, item.y);
             }
+            // 倒计时帧数，用于判断幽灵是否恢复正常状态
+            if (item.timeout) {
+              item.timeout--;
+            }
             item.update();
           }
           item.draw(context);
