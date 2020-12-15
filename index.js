@@ -68,9 +68,37 @@ const game = new Game('canvas');
     stage = game.createStage({
       update() {
         if (this.status === 1) {
+          // 物体检测
+          npcs.forEach((npc) => {
+            if (map && !map.get(npc.coord.x, npc.coord.y) && !map.get(player.coord.x, player.coord.y)) {
+              const dx = npc.x - player.x;
+              const dy = npc.y - player.y;
+              if (dx * dx + dy * dy < 750 && npc.status !== 4) {
+                if (npc.status === 3) {  // 幽灵生病状态下被主角吃
+                  npc.status = 4;
+                  _SCORE += 10;
+                } else {  // 主角被吃
+                  stage.status = 3;
+                  stage.timeout = 30;
+                }
+              }
+            }
+          });
           // 吃完豆子进入下一关
           if (JSON.stringify(beans.data).indexOf(0) === -1) {
             game.nextStage();
+          }
+        } else if (stage.status === 3) {
+          if (!stage.timeout) {
+            _LIFE--;
+            if (_LIFE) {
+              stage.status = 1;
+              stage.resetItems();
+            } else {
+              const stages = game.getStages();
+              game.setStage(stages.length - 1);
+              return false;
+            }
           }
         }
       }
@@ -271,7 +299,11 @@ const game = new Game('canvas');
       }
     });
 
-    // 幽灵
+    /** 
+     * 幽灵
+     * 运行逻辑：正常情况下根据自己位置和主角位置计算出最短路径，追击主角，主角吃掉能量豆后变成生病状态，逃离主角。
+     * 生病状态被主角吃掉后变成异常状态，回到老家后恢复状态
+     */
     for (let i = 0; i < 4; i++) {
       stage.createItem({
         width: 30,
@@ -286,9 +318,84 @@ const game = new Game('canvas');
         speed: 1,
         timeout: Math.floor(Math.random() * 120),
         update() {
+          let newMap;
           if (this.status === 3 && !this.timeout) {
             this.status = 1;
           }
+          // 到达坐标中心点
+          if (!this.coord.offset) {
+            if (this.status === 1) {  // 正常状态追击主角
+              if (!this.timeout) {
+                // 幽灵可以穿过自家屋子
+                newMap = JSON.parse(JSON.stringify(map.data).replace(/2/g, 0));
+                npcs.forEach((npc) => {
+                  // npc 将其他所有还处于正常状态的 npc 当成一堵墙
+                  if (npc.id !== this.id && npc.status === 1) {
+                    newMap[npc.coord.y][npc.coord.x] = 1;
+                  }
+                });
+                this.path = map.finder({
+                  map: newMap,
+                  start: this.coord,
+                  end: player.coord
+                });
+                if (this.path.length) {
+                  this.vector = this.path[0];
+                }
+              }
+            } else if (this.status === 3) {  // 主角吃掉能量豆时，逃离主角
+              newMap = JSON.parse(JSON.stringify(map.data).replace(/2/g, 0));
+              npcs.forEach((npc) => {
+                if (npc.id !== this.id && npc.status === 1) {
+                  newMap[npc.coord.y][npc.coord.x] = 1;
+                }
+              });
+              this.path = map.finder({
+                map: newMap,
+                start: player.coord,
+                end: this.coord,
+                type: 'next'
+              });
+              if (this.path.length) {
+                this.vector = this.path[Math.floor(Math.random() * this.path.length)];
+              }
+            } else if (this.status === 4) {  // 异常状态，被主角吃掉后，会老家后恢复
+              newMap = JSON.parse(JSON.stringify(map.data).replace(/2/g, 0));
+              this.path = map.finder({
+                map: newMap,
+                start: this.coord,
+                end: this.params.coord,
+              });
+              if (this.path.length) {
+                this.vector = this.path[0];
+              } else {
+                this.status = 1;
+              }
+            }
+
+            // 是否转换方向(走出中间没墙的位置)
+            if (this.vector.change) {
+              this.coord.x = this.vector.x;
+              this.coord.y = this.vector.y;
+              const pos = map.coord2position(this.coord.x, this.coord.y);
+              this.x = pos.x;
+              this.y = pos.y;
+            }
+
+            // 方向更新
+            if (this.vector.x > this.coord.x) {
+              this.direction = 0;
+            } else if (this.vector.x < this.coord.x) {
+              this.direction = 2;
+            } else if (this.vector.y > this.coord.y) {
+              this.direction = 1;
+            } else if (this.vector.y < this.coord.y) {
+              this.direction = 3;
+            }
+          }
+
+          this.x += this.speed * _COS[this.direction];
+          this.y += this.speed * _SIN[this.direction];
         },
         draw(context) {
           let isSick = false;
@@ -296,6 +403,7 @@ const game = new Game('canvas');
             // 倒计时帧数大于 80 生病状态，小于 80 时正常和生病来回切换
             isSick = this.timeout > 80 || this.times % 2 ? true : false;
           }
+          // 异常状态（幽灵临时状态下被吃掉会变成异常状态）下没有身体
           if (this.status !== 4) {
             context.fillStyle = isSick ? '#BABABA' : this.color;
             context.beginPath();
@@ -402,12 +510,20 @@ const game = new Game('canvas');
       draw(context) {
         context.fillStyle = "#FFE600";
         context.beginPath();
-        // 玩家正常状态
-        if (stage.status !== 3) {
+        if (stage.status !== 3) {  // 玩家正常状态
           if (this.times % 2) {
             context.arc(this.x, this.y, this.width / 2, (0.5 * this.direction + 0.20) * Math.PI, (0.5 * this.direction - 0.20) * Math.PI, false);
           } else {
             context.arc(this.x, this.y, this.width / 2, (0.5 * this.direction + 0.01) * Math.PI, (0.5 * this.direction - 0.01) * Math.PI, false);
+          }
+        } else {  // 玩家被吃
+          if (stage.timeout) {
+            context.arc(
+              this.x, this.y, this.width / 2, 
+              (0.5 * this.direction + (1 - 0.02 * stage.timeout)) * Math.PI,
+              (0.5 * this.direction - (1 - 0.02 * stage.timeout)) * Math.PI,
+              false,
+            );
           }
         }
         context.lineTo(this.x, this.y);

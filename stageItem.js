@@ -22,7 +22,7 @@ class StageItem {
       location: null,         // 定位地图,Map对象
       coord: null,            // 如果对象与地图绑定,需设置地图坐标;若不绑定,则设置位置坐标
       path: [],               // NPC自动行走的路径
-      vector: null,           // 目标坐标
+      vector: null,           // 下一位置目标坐标(记录幽灵下一位置)
       // 布局相关   
       frames: 1,              // 速度等级,即多少帧 times 变化一次
       times: 0,               // 刷新画布计数(用于循环动画状态判断)

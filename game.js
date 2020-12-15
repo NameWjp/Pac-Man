@@ -41,6 +41,11 @@ class Game {
       context.fillRect(0, 0, width, height);
       f++;
 
+      // 死亡动画，场景重置倒计时
+      if (stage.timeout) {
+        stage.timeout--;
+      }
+
       if (stage.update() !== false) {   // update 返回 false,则不绘制
         // stage中的map处理
         stage.maps.forEach((map) => {
@@ -123,5 +128,9 @@ class Game {
     const stage = new Stage(options, this);
     this.stages.push(stage);
     return stage;
+  }
+
+  getStages() {
+    return this.stages;
   }
 }
